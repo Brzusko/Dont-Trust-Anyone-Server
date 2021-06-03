@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Autoload/Networking.gd" type="Script" id=1]
+[ext_resource path="res://Autoload/Players.gd" type="Script" id=2]
+[ext_resource path="res://Autoload/Clock.tscn" type="PackedScene" id=3]
+
+[node name="Networking" type="Node"]
+script = ExtResource( 1 )
+
+[node name="Players" type="Node" parent="."]
+script = ExtResource( 2 )
+
+[node name="Clock" parent="." instance=ExtResource( 3 )]
+Players_path = NodePath("../Players")
