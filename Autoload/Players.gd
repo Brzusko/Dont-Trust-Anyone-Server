@@ -33,7 +33,7 @@ func register_player(peer_id: int, player_name: String):
 	if active_players.has(player_name):
 		var player = active_players[player_name] as PlayerScene;
 		if player.player_state == Enums.PLAYER_STATE.NONE:
-			player.register_player(peer_id);
+			player.reconnect(peer_id);
 			return true;
 		else:
 			return false;
@@ -48,12 +48,28 @@ func register_player(peer_id: int, player_name: String):
 	add_child(player);
 	return true;
 
+func disconnect_player(peer_id: int):
+	if players_to_register.has(str(peer_id)):
+		return;
+	var player = find_player_by_id(peer_id);
+	if player != null:
+		player.disconnect_player();
+	
 func clock_sync_done(credentials: Dictionary):
 	var player = get_node(credentials.pn);
 	if player == null: # TODO handle this error
 		return;
-	player.time_sync();
+	player.time_sync_done();	
+	Networking.switch_player_scene(player.peer_id, Enums.PLAYER_SCENES.WORLD);
 	
+# Utils
+
+func find_player_by_id(peer_id: int):
+	for player in active_players.values():
+		if player.peer_id == peer_id:
+			return player;
+	return null;
+
 # Thread functionality
 
 func timer_tick():

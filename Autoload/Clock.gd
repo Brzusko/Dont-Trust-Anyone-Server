@@ -11,5 +11,3 @@ remote func get_letanecy(client_time):
 remote func clock_synced(credentials: Dictionary):
 	players.clock_sync_done(credentials);
 
-func _physics_process(delta):
-	print(OS.get_system_time_msecs());

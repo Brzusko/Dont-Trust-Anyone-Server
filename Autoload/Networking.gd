@@ -35,11 +35,16 @@ func on_client_connect(peer_id: int):
 
 func on_client_disconnected(peer_id: int):
 	print("Player disconnected: " + str(peer_id));
+	$Players.disconnect_player(peer_id);
 
 # utility
 func disconnect_player(peer_id: int): 
 	network.disconnect_peer(peer_id);
+
+func switch_player_scene(peer_id: int, scene_id: int):
+	rpc_id(peer_id, "switch_scene", scene_id);
 	
+
 # remote methods
 
 # ATM 
