@@ -6,7 +6,3 @@
 script = ExtResource( 1 )
 
 [node name="Players" type="YSort" parent="."]
-
-[node name="StaticSync" type="YSort" parent="."]
-
-[node name="Static" type="YSort" parent="."]

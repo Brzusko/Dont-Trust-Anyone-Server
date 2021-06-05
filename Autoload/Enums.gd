@@ -13,3 +13,7 @@ enum PLAYER_SCENES {
 	WORLD,
 	LOBBY,
 }
+
+enum DYNAMIC_OBJECTS {
+	PLAYER
+}
