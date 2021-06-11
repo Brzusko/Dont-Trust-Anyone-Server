@@ -1,5 +1,8 @@
 extends Node
-class_name Players
+
+signal send_world_to_player(peer_id);
+signal create_player_in_world(player_name);
+signal destroy_player_in_world(player_name);
 
 const CLEAR_INTERVAL = 15;
 var timer: Timer;
@@ -12,65 +15,116 @@ onready var semaphore: Semaphore = Semaphore.new();
 onready var player_scene = preload("res://Scenes/PlayerScene.tscn");
 
 func _ready():
-	start_thread();
+	# start_thread();
+	var _e = Networking.connect("player_connected", self, "on_player_connect");
+	var __e = Networking.connect("player_disconnected", self, "on_player_disconnect");
 
 # Adding player to "players_to_Register", if player will not send msg with credentails
 # he will be disconnected
 func player_to_register(peer_id: int):
 	mutex.lock();
+	
 	if players_to_register.size() > 40:
 		mutex.unlock();
-		return false;
+		
+		Networking.disconnect_player(peer_id);
+		return;
+		
 	players_to_register[str(peer_id)] = true;
 	mutex.unlock();
-	return true;
+	print("Waiting for credentials: ", peer_id);
 
 #
-func register_player(peer_id: int, player_name: String):
+func register_player(peer_id: int, credentials: Dictionary):
 	if !players_to_register.has(str(peer_id)):
-		return false;
+		print("Is not in waiting list");
+		Networking.disconnect_player(peer_id);
+		return;
 		
-	if active_players.has(player_name):
-		var player = active_players[player_name] as PlayerScene;
+	if active_players.has(credentials.pn):
+		var player = active_players[credentials.pn] as PlayerScene;
 		if player.player_state == Enums.PLAYER_STATE.NONE:
-			player.register_player(peer_id);
-			return true;
+			player.reconnect(peer_id);
+			emit_signal("create_player_in_world", player.name);
+			Networking.player_registred(player.peer_id);
+			return;
 		else:
-			return false;
 			
-	mutex.lock();
+			Networking.disconnect_player(peer_id);
+			return;
+			
+	var _err = mutex.lock();
 	players_to_register.erase(str(peer_id));
-	mutex.unlock();
+	var __err = mutex.unlock();
 	
 	var player = player_scene.instance();
-	player.register_player(peer_id, player_name);
-	active_players[player_name] = player;
+	player.register_player(peer_id, credentials.pn);
+	active_players[credentials.pn] = player;
 	add_child(player);
-	return true;
-
-func clock_sync_done(credentials: Dictionary):
-	var player = get_node(credentials.pn);
-	if player == null: # TODO handle this error
-		return;
-	player.time_sync();
 	
+	emit_signal("create_player_in_world", player.name);
+	Networking.player_registred(player.peer_id);
+
+func disconnect_player(peer_id: int):
+	var player = find_player_by_id(peer_id);
+	if player != null:
+		player.disconnect_player();
+	
+func clock_sync_done(credentials: Dictionary):
+	var player = get_node(credentials.pn) as PlayerScene;
+	
+	if player == null || player.player_state == Enums.PLAYER_STATE.LOADING: # TODO handle this error
+		return;
+		
+	player.time_sync_done();
+	emit_signal("send_world_to_player", player.peer_id, player.name);
+	
+	Networking.time_sync_done(player.peer_id);
+
+func player_done_loading(credentials: Dictionary):
+	var player = get_node(credentials.pn) as PlayerScene;
+	
+	if player == null:
+		return;
+	
+	player.player_loaded();
+
+# Utils
+
+func find_player_by_id(peer_id: int):
+	for player in active_players.values():
+		if player.peer_id == peer_id:
+			return player;
+	return null;
+
+func can_be_synced(player_name):
+	var player = active_players[player_name] as PlayerScene;
+	return player.player_state == Enums.PLAYER_STATE.SIMULATING;
+
+# events
+func on_player_connect(peer_id: int):
+	player_to_register(peer_id);
+
+func on_player_disconnect(peer_id: int):
+	disconnect_player(peer_id);
+
 # Thread functionality
 
 func timer_tick():
-	semaphore.post();
+	var _err = semaphore.post();
 	pass;
 
 func start_thread():
-	thread.start(self, "player_cleaner");
+	var _err = thread.start(self, "player_cleaner");
 	timer = Timer.new();
 	timer.wait_time = CLEAR_INTERVAL;
-	timer.connect("timeout", self, "timer_tick");
+	var _e = timer.connect("timeout", self, "timer_tick");
 	add_child(timer);
 	timer.start();
 
 func player_cleaner(user_data):
 	while true:
-		semaphore.wait();
+		var _err = semaphore.wait();
 		mutex.lock();
 		clear_players();
 		mutex.unlock();
@@ -80,6 +134,7 @@ func player_cleaner(user_data):
 
 func clear_players():
 	for i in players_to_register:
+		Networking.disconnect_player(int(i));
 		players_to_register.erase(i);
 		print("Cleared Player with id: " + i);
 

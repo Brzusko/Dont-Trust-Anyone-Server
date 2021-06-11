@@ -9,19 +9,31 @@
 config_version=4
 
 _global_script_classes=[ {
+"base": "KinematicBody2D",
+"class": "BasePlayer",
+"language": "GDScript",
+"path": "res://Scenes/Sync/Dynamic/Player.gd"
+}, {
+"base": "StaticBody2D",
+"class": "BaseStatic",
+"language": "GDScript",
+"path": "res://Scenes/Sync/Static/BaseStatic.gd"
+}, {
 "base": "Node",
 "class": "PlayerScene",
 "language": "GDScript",
 "path": "res://Scenes/PlayerScene.gd"
 }, {
 "base": "Node",
-"class": "Players",
+"class": "UUID",
 "language": "GDScript",
-"path": "res://Autoload/Players.gd"
+"path": "res://Uitls/uuid.gd"
 } ]
 _global_script_class_icons={
+"BasePlayer": "",
+"BaseStatic": "",
 "PlayerScene": "",
-"Players": ""
+"UUID": ""
 }
 
 [application]
@@ -35,9 +47,15 @@ config/icon="res://icon.png"
 Globals="*res://Autoload/Globals.tscn"
 Enums="*res://Autoload/Enums.tscn"
 Networking="*res://Autoload/Networking.tscn"
+Players="*res://Autoload/Players.tscn"
+
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/Todo_Manager/plugin.cfg" )
 
 [physics]
 
+common/physics_fps=15
 common/enable_pause_aware_picking=true
 
 [rendering]
