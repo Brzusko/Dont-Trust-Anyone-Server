@@ -64,5 +64,7 @@ remote func register_player(credentials: Dictionary):
 		return;
 		
 	Players.register_player(peer_id, credentials);
-	
 
+remote func player_done_loading(credentials: Dictionary):
+	Players.player_done_loading(credentials);
+	pass;

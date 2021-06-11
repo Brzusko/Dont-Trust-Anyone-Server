@@ -15,7 +15,7 @@ onready var semaphore: Semaphore = Semaphore.new();
 onready var player_scene = preload("res://Scenes/PlayerScene.tscn");
 
 func _ready():
-	start_thread();
+	# start_thread();
 	var _e = Networking.connect("player_connected", self, "on_player_connect");
 	var __e = Networking.connect("player_disconnected", self, "on_player_disconnect");
 
@@ -37,6 +37,7 @@ func player_to_register(peer_id: int):
 #
 func register_player(peer_id: int, credentials: Dictionary):
 	if !players_to_register.has(str(peer_id)):
+		print("Is not in waiting list");
 		Networking.disconnect_player(peer_id);
 		return;
 		
@@ -44,8 +45,11 @@ func register_player(peer_id: int, credentials: Dictionary):
 		var player = active_players[credentials.pn] as PlayerScene;
 		if player.player_state == Enums.PLAYER_STATE.NONE:
 			player.reconnect(peer_id);
+			emit_signal("create_player_in_world", player.name);
+			Networking.player_registred(player.peer_id);
 			return;
 		else:
+			
 			Networking.disconnect_player(peer_id);
 			return;
 			
@@ -62,9 +66,6 @@ func register_player(peer_id: int, credentials: Dictionary):
 	Networking.player_registred(player.peer_id);
 
 func disconnect_player(peer_id: int):
-	if players_to_register.has(str(peer_id)):
-		return;
-		
 	var player = find_player_by_id(peer_id);
 	if player != null:
 		player.disconnect_player();
@@ -76,10 +77,18 @@ func clock_sync_done(credentials: Dictionary):
 		return;
 		
 	player.time_sync_done();
-	emit_signal("send_world_to_player", player.peer_id);
+	emit_signal("send_world_to_player", player.peer_id, player.name);
 	
 	Networking.time_sync_done(player.peer_id);
+
+func player_done_loading(credentials: Dictionary):
+	var player = get_node(credentials.pn) as PlayerScene;
 	
+	if player == null:
+		return;
+	
+	player.player_loaded();
+
 # Utils
 
 func find_player_by_id(peer_id: int):
@@ -87,6 +96,10 @@ func find_player_by_id(peer_id: int):
 		if player.peer_id == peer_id:
 			return player;
 	return null;
+
+func can_be_synced(player_name):
+	var player = active_players[player_name] as PlayerScene;
+	return player.player_state == Enums.PLAYER_STATE.SIMULATING;
 
 # events
 func on_player_connect(peer_id: int):
