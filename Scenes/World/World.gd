@@ -17,6 +17,7 @@ func create_player(player_name):
 	$Players.create_player(player_name);
 
 func destroy_player(player_name):
+	$Players.clear_input(player_name);
 	pass;
 
 func serialize_world(peer_id, player_name):

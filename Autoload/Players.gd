@@ -69,6 +69,7 @@ func disconnect_player(peer_id: int):
 	var player = find_player_by_id(peer_id);
 	if player != null:
 		player.disconnect_player();
+		emit_signal("destroy_player_in_world", player.name);
 	
 func clock_sync_done(credentials: Dictionary):
 	var player = get_node(credentials.pn) as PlayerScene;
@@ -107,6 +108,7 @@ func on_player_connect(peer_id: int):
 
 func on_player_disconnect(peer_id: int):
 	disconnect_player(peer_id);
+	var player = find_player_by_id(peer_id);
 
 # Thread functionality
 
