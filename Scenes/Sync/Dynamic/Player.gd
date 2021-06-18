@@ -17,16 +17,22 @@ var last_recived_input = {
 }
 
 var last_processed_input = 0;
+var latest_state = {
+	"v": Vector2.ZERO,
+	"l": 0,
+}
 
 func setup(new_name):
 	name = new_name;
 
 func process_input(delta):
+	latest_state.v = Vector2.ZERO;
 	while !unprocessed_inputs.empty():
 		var input = unprocessed_inputs.pop_front();
 		move_and_collide(input.v * (delta * MOVE_SPEED));
 		last_processed_input = input.i;
-	pass;
+		latest_state.v = input.v;
+		latest_state.l = input.l;
 		
 func serialize():
 	if !is_inside_tree():
@@ -35,7 +41,8 @@ func serialize():
 	return {
 		"n": name,
 		"p": global_position,
-		"li": last_processed_input,	
+		"li": last_processed_input,
+		"s": latest_state,	
 	}
 
 func clear_input():
